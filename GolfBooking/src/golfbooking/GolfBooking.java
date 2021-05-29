@@ -5,24 +5,17 @@
  */
 package golfbooking;
 
- 
 import com.sun.jna.Pointer;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Robot;
-import static java.awt.SystemColor.text;
 import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -32,26 +25,24 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
- 
-
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.Timer;
 
 /**
  *
  * @author CH Lai
  */
 public class GolfBooking extends javax.swing.JFrame {
+
     Image img = Toolkit.getDefaultToolkit().getImage(getClass().getResource("/res/north.png"));
     ScheduledExecutorService ses = null;
     ScheduledExecutorService sesGolf = null;
     public static long timeDiff = 0;
-    
+
     boolean bStarted = false;
     public static long count = 0;
     public static long timeTarget = 0;
- List<Pointer> hwnsChrome= null;
+    List<Pointer> hwnsChrome = null;
+
     /**
      * Creates new form GolfBooking
      */
@@ -63,41 +54,38 @@ public class GolfBooking extends javax.swing.JFrame {
         setByCurrentDate();
 //        timeDiff = JnaUtil.timeDiff();
     }
-    
-   
-   
 
-    
     final Runnable refreshSingleWindow = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if(ses!=null){
-                        ses.shutdown();
-                    }
-                    ses =null;
-                    jLabelCountDown.setForeground(Color.GREEN);
-                    jLabelCountDown.setText("Task Excuted");
-                    int mode = jComboBoxAlgo.getSelectedIndex();
-                    if(mode ==0){
-                        JnaUtil.refreshAllGoogle();
-                    }else if(mode==1){
-                        JnaUtil.refreshGolfBookingSingleWindow(timeTarget);
-                    }else if(mode == 2){
-                        JnaUtil.refreshChromeTabs(0);
-                    }
-                    if(sesGolf!=null){
-                        sesGolf.shutdown();
-                    }
-                    sesGolf = null;
-                    count =0;
-                } catch (Exception e) {
-                    System.out.println("ERROR - unexpected exception function");
+        @Override
+        public void run() {
+            try {
+                if (ses != null) {
+                    ses.shutdown();
                 }
-
+                ses = null;
+                jLabelCountDown.setForeground(Color.GREEN);
+                jLabelCountDown.setText("Task Excuted");
+                int mode = jComboBoxAlgo.getSelectedIndex();
+                if (mode == 0) {
+                    JnaUtil.refreshAllGoogle();
+                } else if (mode == 1) {
+                    JnaUtil.refreshGolfBookingSingleWindow(timeTarget);
+                } else if (mode == 2) {
+                    JnaUtil.refreshChromeTabs(0);
+                }
+                if (sesGolf != null) {
+                    sesGolf.shutdown();
+                }
+                sesGolf = null;
+                count = 0;
+            } catch (Exception e) {
+                System.out.println("ERROR - unexpected exception function");
             }
-        };
-    public void countDown(){
+
+        }
+    };
+
+    public void countDown() {
 
         try {  // Let no Exception reach the ScheduledExecutorService.
             long currentTime = System.currentTimeMillis();
@@ -111,18 +99,18 @@ public class GolfBooking extends javax.swing.JFrame {
             long minutes = 0;
             minutes = (timeRemain - hour * 3600000) / 60000;
             double sec = (timeRemain - hour * 3600000 - minutes * 60000) * 1.0 / 1000.0;
-            if(hour==0 && minutes==0 && sec<10){
-                if(sesGolf==null){
+            if (hour == 0 && minutes == 0 && sec < 10) {
+                if (sesGolf == null) {
                     sesGolf = Executors.newScheduledThreadPool(1);
-                    sesGolf.schedule(refreshSingleWindow, timeTarget - System.currentTimeMillis()-timeDiff, TimeUnit.MILLISECONDS);
+                    sesGolf.schedule(refreshSingleWindow, timeTarget - System.currentTimeMillis() - timeDiff, TimeUnit.MILLISECONDS);
                 }
                 jLabelCountDown.setForeground(Color.red);
             } else {
                 jLabelCountDown.setForeground(jLabel1.getForeground());
             }
-            String strHour = (hour>0)?String.format("%dH:", hour):"";
-            String strMin= (minutes>0)?String.format("%dM:", minutes):"";
-            String result = String.format("%s -  %s %s %.3fS", passed,strHour, strMin, sec);
+            String strHour = (hour > 0) ? String.format("%dH:", hour) : "";
+            String strMin = (minutes > 0) ? String.format("%dM:", minutes) : "";
+            String result = String.format("%s -  %s %s %.3fS", passed, strHour, strMin, sec);
 //            System.out.println(result);
             count++;
             jLabelCountDown.setText(result);
@@ -130,36 +118,38 @@ public class GolfBooking extends javax.swing.JFrame {
             System.out.println("ERROR - unexpected exception function");
         }
     }
-    
-    private void setByCurrentDate(){
+
+    private void setByCurrentDate() {
         Calendar cal = Calendar.getInstance();
         Date now = cal.getTime();
         int hour = cal.get(Calendar.HOUR_OF_DAY);
         int minutes = cal.get(Calendar.MINUTE);
         int seconds = 0;
-        if(hour > 9 ){
-            if(hour==9 && minutes < 30){
+        if (hour > 9) {
+            if (hour == 9 && minutes < 30) {
                 hour = 9;
                 minutes = 30;
             } else {
                 hour = 17;
                 minutes = 0;
             }
-        }else {
+        } else {
             hour = 9;
             minutes = 30;
         }
-        jTextFieldyear.setText(""+cal.get(Calendar.YEAR));
-        jTextFieldmonth.setText(""+(cal.get(Calendar.MONTH)+1));
-        jTextFieldday.setText(""+cal.get(Calendar.DATE));
-        jTextFieldhour.setText(""+hour);
-        jTextFieldminute.setText(""+minutes);
+        jTextFieldyear.setText("" + cal.get(Calendar.YEAR));
+        jTextFieldmonth.setText("" + (cal.get(Calendar.MONTH) + 1));
+        jTextFieldday.setText("" + cal.get(Calendar.DATE));
+        jTextFieldhour.setText("" + hour);
+        jTextFieldminute.setText("" + minutes);
         jTextFieldsecond.setText("" + seconds);
-        
+
     }
-    public void updateFrameDisplay(){
+
+    public void updateFrameDisplay() {
         this.repaint();
     }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -170,6 +160,7 @@ public class GolfBooking extends javax.swing.JFrame {
     private void initComponents() {
 
         buttonGroup1 = new javax.swing.ButtonGroup();
+        jTabbedPane1 = new javax.swing.JTabbedPane();
         jPanelContent = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
@@ -199,13 +190,16 @@ public class GolfBooking extends javax.swing.JFrame {
         jLabelCountDown = new javax.swing.JLabel();
         jPanel10 = new javax.swing.JPanel();
         jTextFieldLag = new javax.swing.JTextField();
-        jButton1 = new javax.swing.JButton();
+        jButtonStart = new javax.swing.JButton();
         jButtonStop = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
+        jPanel11 = new javax.swing.JPanel();
+        jButtonWeb = new javax.swing.JButton();
+        jButton1 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Booking");
         setMinimumSize(new java.awt.Dimension(450, 350));
+        getContentPane().setLayout(new java.awt.GridLayout(1, 0));
 
         jPanelContent.setMinimumSize(new java.awt.Dimension(450, 350));
         jPanelContent.setLayout(null);
@@ -282,8 +276,8 @@ public class GolfBooking extends javax.swing.JFrame {
         jTextFieldhour.setText("9");
         jPanel5.add(jTextFieldhour);
 
-        jComboBoxAlgo.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Mult-window", "Single Window", "Tabs" }));
-        jComboBoxAlgo.setSelectedIndex(1);
+        jComboBoxAlgo.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Mult-window", "Single Window", "Tabs", "Threads" }));
+        jComboBoxAlgo.setSelectedIndex(3);
         jPanel5.add(jComboBoxAlgo);
 
         jPanel1.add(jPanel5);
@@ -314,25 +308,25 @@ public class GolfBooking extends javax.swing.JFrame {
         jPanel1.add(jPanel9);
 
         jPanelContent.add(jPanel1);
-        jPanel1.setBounds(10, 10, 370, 160);
+        jPanel1.setBounds(10, 10, 420, 160);
 
         jLabelCountDown.setFont(new java.awt.Font("Dialog", 1, 18)); // NOI18N
         jLabelCountDown.setText("Counter Down: ");
         jPanelContent.add(jLabelCountDown);
         jLabelCountDown.setBounds(30, 180, 360, 27);
 
-        jPanel10.setLayout(new java.awt.GridLayout());
+        jPanel10.setLayout(new java.awt.GridLayout(1, 0));
 
         jTextFieldLag.setText("1500");
         jPanel10.add(jTextFieldLag);
 
-        jButton1.setText("Start");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        jButtonStart.setText("Start");
+        jButtonStart.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                jButtonStartActionPerformed(evt);
             }
         });
-        jPanel10.add(jButton1);
+        jPanel10.add(jButtonStart);
 
         jButtonStop.setText("Stop");
         jButtonStop.addActionListener(new java.awt.event.ActionListener() {
@@ -342,18 +336,30 @@ public class GolfBooking extends javax.swing.JFrame {
         });
         jPanel10.add(jButtonStop);
 
-        jButton2.setText("Web");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
-            }
-        });
-        jPanel10.add(jButton2);
-
         jPanelContent.add(jPanel10);
         jPanel10.setBounds(10, 220, 420, 50);
 
-        getContentPane().add(jPanelContent, java.awt.BorderLayout.CENTER);
+        jTabbedPane1.addTab("Main", jPanelContent);
+
+        jButtonWeb.setText("Web");
+        jButtonWeb.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonWebActionPerformed(evt);
+            }
+        });
+        jPanel11.add(jButtonWeb);
+
+        jButton1.setText("Test");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        jPanel11.add(jButton1);
+
+        jTabbedPane1.addTab("Test", jPanel11);
+
+        getContentPane().add(jTabbedPane1);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -362,7 +368,7 @@ public class GolfBooking extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextFieldminuteActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    private void jButtonStartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStartActionPerformed
         // TODO add your handling code here:
         jLabelCountDown.setForeground(jLabel1.getForeground());
         jLabelCountDown.setText("");
@@ -376,8 +382,8 @@ public class GolfBooking extends javax.swing.JFrame {
         Date target = JnaUtil.timeAt(year, month, day, hour, minute, second);
         timeTarget = target.getTime();
         timeDiff = Long.parseLong(jTextFieldLag.getText());
-     
-        if((timeTarget - System.currentTimeMillis())<0){
+
+        if ((timeTarget - System.currentTimeMillis()) < 0) {
             JOptionPane.showMessageDialog(this, "Expired");
             return;
         }
@@ -386,7 +392,7 @@ public class GolfBooking extends javax.swing.JFrame {
 //        } else{
 //        timer.start();
 //        }
-        
+
         final Runnable runnable = new Runnable() {
             @Override
             public void run() {
@@ -398,56 +404,56 @@ public class GolfBooking extends javax.swing.JFrame {
 
             }
         };
-        
+
         ses = Executors.newScheduledThreadPool(1);
         ses.scheduleWithFixedDelay(runnable, 10, 100, TimeUnit.MILLISECONDS);
 
 // ses.scheduleAtFixedRate(runnable, 100, 200, TimeUnit.MILLISECONDS);
         System.out.println("Seconds to Go: " + (timeTarget - System.currentTimeMillis()) / 1000.0);
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }//GEN-LAST:event_jButtonStartActionPerformed
 
     private void jButtonStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStopActionPerformed
         // TODO add your handling code here:
         jLabelCountDown.setText("");
-        count =0;
-        if(ses!=null){
+        count = 0;
+        if (ses != null) {
             ses.shutdown();
         }
-        if(sesGolf!=null){
+        if (sesGolf != null) {
             sesGolf.shutdown();
         }
         sesGolf = null;
-        ses= null;
+        ses = null;
     }//GEN-LAST:event_jButtonStopActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         // TODO add your handling code here:
         Calendar cal = Calendar.getInstance();
-    
-        jTextFieldyear.setText(""+cal.get(Calendar.YEAR));
-        jTextFieldmonth.setText(""+(cal.get(Calendar.MONTH)+1));
-        jTextFieldday.setText(""+cal.get(Calendar.DATE));
-        jTextFieldhour.setText(""+cal.get(Calendar.HOUR_OF_DAY));
-        if(cal.get(Calendar.SECOND)>30) {
-            jTextFieldminute.setText(""+(cal.get(Calendar.MINUTE)+1));
+
+        jTextFieldyear.setText("" + cal.get(Calendar.YEAR));
+        jTextFieldmonth.setText("" + (cal.get(Calendar.MONTH) + 1));
+        jTextFieldday.setText("" + cal.get(Calendar.DATE));
+        jTextFieldhour.setText("" + cal.get(Calendar.HOUR_OF_DAY));
+        if (cal.get(Calendar.SECOND) > 30) {
+            jTextFieldminute.setText("" + (cal.get(Calendar.MINUTE) + 1));
             jTextFieldsecond.setText("0");
-        }else{
-            jTextFieldminute.setText(""+(cal.get(Calendar.MINUTE)));
-            jTextFieldsecond.setText("30" );
+        } else {
+            jTextFieldminute.setText("" + (cal.get(Calendar.MINUTE)));
+            jTextFieldsecond.setText("30");
         }
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         // TODO add your handling code here:
-         Calendar cal = Calendar.getInstance();
-         
+        Calendar cal = Calendar.getInstance();
+
         cal.set(Calendar.HOUR_OF_DAY, 9);
         cal.set(Calendar.MINUTE, 30);
-        jTextFieldyear.setText(""+cal.get(Calendar.YEAR));
-        jTextFieldmonth.setText(""+(cal.get(Calendar.MONTH)+1));
-        jTextFieldday.setText(""+cal.get(Calendar.DATE));
-        jTextFieldhour.setText(""+cal.get(Calendar.HOUR_OF_DAY));
-        jTextFieldminute.setText(""+cal.get(Calendar.MINUTE));
+        jTextFieldyear.setText("" + cal.get(Calendar.YEAR));
+        jTextFieldmonth.setText("" + (cal.get(Calendar.MONTH) + 1));
+        jTextFieldday.setText("" + cal.get(Calendar.DATE));
+        jTextFieldhour.setText("" + cal.get(Calendar.HOUR_OF_DAY));
+        jTextFieldminute.setText("" + cal.get(Calendar.MINUTE));
         jTextFieldsecond.setText("0");
     }//GEN-LAST:event_jButton4ActionPerformed
 
@@ -456,44 +462,45 @@ public class GolfBooking extends javax.swing.JFrame {
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, 17);
         cal.set(Calendar.MINUTE, 0);
-        
-       
-        jTextFieldyear.setText(""+cal.get(Calendar.YEAR));
-        jTextFieldmonth.setText(""+(cal.get(Calendar.MONTH)+1));
-        jTextFieldday.setText(""+cal.get(Calendar.DATE));
-        jTextFieldhour.setText(""+cal.get(Calendar.HOUR_OF_DAY));
-        jTextFieldminute.setText(""+cal.get(Calendar.MINUTE));
+
+        jTextFieldyear.setText("" + cal.get(Calendar.YEAR));
+        jTextFieldmonth.setText("" + (cal.get(Calendar.MONTH) + 1));
+        jTextFieldday.setText("" + cal.get(Calendar.DATE));
+        jTextFieldhour.setText("" + cal.get(Calendar.HOUR_OF_DAY));
+        jTextFieldminute.setText("" + cal.get(Calendar.MINUTE));
         jTextFieldsecond.setText("0");
     }//GEN-LAST:event_jButton5ActionPerformed
 
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        
-            // TODO add your handling code here:
+    private void jButtonWebActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonWebActionPerformed
+
+        // TODO add your handling code here:
         try {
-            int row = 3, col = 4;
+            int row = 2, col = 4;
             Robot robot = new Robot();
             hwnsChrome = null;
             for (int i = 0; i < row * col; i++) {
-                Runtime.getRuntime().exec("chrome");
-//                Runtime.getRuntime().exec(new String[]{"cmd", "/c", "start chrome"});
+//                Runtime.getRuntime().exec("chrome");
+                Runtime.getRuntime().exec(new String[]{"cmd", "/c", "start chrome"});
 //                Pointer hwnd = JnaUtil.getForegroundWindow();
                 Thread.sleep(500);
             }
             hwnsChrome = JnaUtil.getAllWinHwndContains("Google Chrome");
             Dimension objDimension = Toolkit.getDefaultToolkit().getScreenSize();
-            int bwidth = objDimension.width/col;
-            int bheight = (objDimension.height-35)/row;
+            int bwidth = objDimension.width / col;
+            int bheight = (objDimension.height - 35) / row;
             int counter = 0;
             for (int i = 0; i < row; i++) {
                 for (int j = 0; j < col; j++) {
-                    if(counter>= hwnsChrome.size()) break;
+                    if (counter >= hwnsChrome.size()) {
+                        break;
+                    }
                     JnaUtil.setForegroundWindow(hwnsChrome.get(counter));
                     Thread.sleep(300);
-                    JnaUtil.setWindowPos(hwnsChrome.get(counter), bwidth*j, bheight*i, bwidth, bheight);
+                    JnaUtil.setWindowPos(hwnsChrome.get(counter), bwidth * j, bheight * i, bwidth, bheight);
                     Thread.sleep(100);
                     counter++;
                 }
-            }           
+            }
         } catch (IOException ex) {
             Logger.getLogger(GolfBooking.class.getName()).log(Level.SEVERE, null, ex);
         } catch (AWTException ex) {
@@ -502,8 +509,26 @@ public class GolfBooking extends javax.swing.JFrame {
             Logger.getLogger(GolfBooking.class.getName()).log(Level.SEVERE, null, ex);
         }
         Pointer hwnd = JnaUtil.getForegroundWindow();
-            
-    }//GEN-LAST:event_jButton2ActionPerformed
+
+    }//GEN-LAST:event_jButtonWebActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+
+        try {
+            URL myURL = new URL("https://booking.kscgolf.org.hk/");
+            URLConnection myURLConnection = myURL.openConnection();
+            myURLConnection.connect();
+
+        } catch (MalformedURLException e) {
+            // new URL() failed
+            // ...
+        } catch (IOException e) {
+            // openConnection() failed
+            // ...
+        }
+
+    }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -521,11 +546,12 @@ public class GolfBooking extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
+    private javax.swing.JButton jButtonStart;
     private javax.swing.JButton jButtonStop;
+    private javax.swing.JButton jButtonWeb;
     private javax.swing.JComboBox<String> jComboBoxAlgo;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -536,6 +562,7 @@ public class GolfBooking extends javax.swing.JFrame {
     public static javax.swing.JLabel jLabelCountDown;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel10;
+    private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
@@ -545,6 +572,7 @@ public class GolfBooking extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
     private javax.swing.JPanel jPanelContent;
+    private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTextField jTextFieldLag;
     private javax.swing.JTextField jTextFieldday;
     private javax.swing.JTextField jTextFieldhour;

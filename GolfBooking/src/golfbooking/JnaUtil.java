@@ -28,6 +28,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.net.ntp.NTPUDPClient;
 import org.apache.commons.net.ntp.TimeInfo;
+  import java.io.IOException;
+      import java.net.InetAddress;
+import java.net.SocketException;
+        import org.apache.commons.net.time.TimeTCPClient;
+      import org.apache.commons.net.time.TimeUDPClient;
+
 
 /**
  * static methods to allow Java to call Windows code. user32.dll code is as
@@ -410,58 +416,105 @@ public class JnaUtil {
     }
 
     static public long timeDiff() {
-        String TIME_SERVER = "time-a.nist.gov";
-        NTPUDPClient timeClient = new NTPUDPClient();
-        long timeElapsed = 0;
-        try {
-            InetAddress inetAddress;
-            inetAddress = InetAddress.getByName(TIME_SERVER);
-            TimeInfo timeInfo = timeClient.getTime(inetAddress);
+            long timeElapsed= 0;
             long sysTime = System.currentTimeMillis();
-            long webTime = timeInfo.getReturnTime();
-
+            long webTime = timeIs().getTime();
             timeElapsed = webTime - sysTime;
             return timeElapsed;
-//            System.out.println("Time from " + TIME_SERVER + ": " + time + ": " + returnTime % 1000);
-
-        } catch (IOException ex) {
-            Logger.getLogger(JnaUtil.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return timeElapsed;
     }
 
     static public Date timeIs() {
-//        String TIME_SERVER = "time-a.nist.gov";
-        String TIME_SERVER = "time-a-g.nist.gov";
-        NTPUDPClient timeClient = new NTPUDPClient();
-
         try {
-            InetAddress inetAddress;
-            inetAddress = InetAddress.getByName(TIME_SERVER);
-            TimeInfo timeInfo = timeClient.getTime(inetAddress);
-            long returnTime = timeInfo.getReturnTime();
-            Date time = new Date(returnTime);
-
-          System.out.println("Time from " + TIME_SERVER + ": " + time);
-            return time;
+            TimeUDPClient client = new TimeUDPClient();
+            // We want to timeout if a response takes longer than 60 seconds
+            client.setDefaultTimeout(1000);
+            client.open();
+            
+            Date dd = client.getDate(InetAddress.getByName("118.143.17.82"));
+ 
+            client.close();
+            return dd;
+        } catch (SocketException ex) {
+            Logger.getLogger(JnaUtil.class.getName()).log(Level.SEVERE, null, ex);
+            
+        } catch (UnknownHostException ex) {
+            Logger.getLogger(JnaUtil.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(JnaUtil.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
     }
-
-    public static void main(String[] args) throws InterruptedException {
-        List<String> wnames = getAllWindowNames();
-        for (String wname : wnames) {
-            if (wname.contains("Google Chrome")) {
-                System.out.println(wname);
-            }
+    
+    public static final void timeTCP(String host) throws IOException
+         {
+             TimeTCPClient client = new TimeTCPClient();
+         try {
+               // We want to timeout if a response takes longer than 60 seconds
+               client.setDefaultTimeout(1000);
+           client.connect(host);
+               System.out.println(client.getDate());
+         } finally {
+               client.disconnect();
+         }
+         }
+     
+         public static final void timeUDP(String host) throws IOException
+         {
+             TimeUDPClient client = new TimeUDPClient();
+     
+             // We want to timeout if a response takes longer than 60 seconds
+             client.setDefaultTimeout(1000);
+             client.open();
+              Date dd = client.getDate(InetAddress.getByName(host));
+              long nowtime = System.currentTimeMillis();
+             System.out.println("Time "+ nowtime + "tcp time " +dd.getTime());
+             client.close();
+         }
+    public static final void mainnew(String[] args) {
+        try {
+            
+            timeTCP("time-a-g.nist.gov");
+            Date d = timeIs();
+            System.out.println("Time is: " + d.getTime());
+            //timeTCP(args[0]);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
         }
-//        Date time = timeIs();
-//        long dif =  timeDiff();
-//        System.out.println("Difference " + dif/1000.0);
+        if (args.length == 1) {
+            try {
+                timeTCP(args[0]);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        } else if (args.length == 2 && args[0].equals("-udp")) {
+            try {
+                timeUDP(args[1]);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        } else {
+            System.err.println("Usage: TimeClient [-udp] <hostname>");
+            System.exit(1);
+        }
 
-        refreshGolfBookingSingleWindow((System.currentTimeMillis() / 1000) * 1000 + 1500);
+    }
+    public static void main(String[] args) throws InterruptedException {
+//        List<String> wnames = getAllWindowNames();
+//        for (String wname : wnames) {
+//            if (wname.contains("Google Chrome")) {
+//                System.out.println(wname);
+//            }
+//        }
+        Date time = timeIs();
+        long tt = System.currentTimeMillis();
+        
+        long dif =  timeDiff();
+        System.out.println("Difference " + dif/1000.0);
+
+//        refreshGolfBookingSingleWindow((System.currentTimeMillis() / 1000) * 1000 + 1500);
 //        refreshAllGoogle();
 //        refreshGolfBookingSingleWindow();
 //        refreshChromeTabs(0);
