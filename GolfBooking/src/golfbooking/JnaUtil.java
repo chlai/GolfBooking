@@ -17,6 +17,9 @@ import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.BaseTSD.LONG_PTR;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinDef.RECT;
+import com.sun.jna.platform.win32.WinUser;
+import com.sun.jna.platform.win32.User32Util;
+ 
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -28,11 +31,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.net.ntp.NTPUDPClient;
 import org.apache.commons.net.ntp.TimeInfo;
-  import java.io.IOException;
-      import java.net.InetAddress;
+import java.io.IOException;
+import java.net.InetAddress;
 import java.net.SocketException;
-        import org.apache.commons.net.time.TimeTCPClient;
-      import org.apache.commons.net.time.TimeUDPClient;
+import org.apache.commons.net.time.TimeTCPClient;
+import org.apache.commons.net.time.TimeUDPClient;
 
 
 /**
@@ -46,7 +49,10 @@ public class JnaUtil {
 
     private static final User32 user32 = User32.INSTANCE;
     private static Pointer callBackHwnd;
+    public static void quitWindow(Pointer hwnd){
+        User32.INSTANCE.SendMessage(hwnd, WinUser.WM_QUIT,null, null);
 
+    }
     public static boolean windowExists(final String startOfWindowName) {
         return !user32.EnumWindows(new User32.WNDENUMPROC() {
             @Override
@@ -154,6 +160,7 @@ public class JnaUtil {
                 byte[] windowText = new byte[512];
                 user32.GetWindowTextA(hWnd, windowText, 512);
                 String wText = Native.toString(windowText).trim();
+                
                 if (!wText.isEmpty() && wText.contains(contains)) {
                     allWnd.add(hWnd);
                     return true;
@@ -337,6 +344,13 @@ public class JnaUtil {
             Logger.getLogger(JnaUtil.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    
+    public static void refreshAt(long timeToRefresh, long interval, List<Pointer> hwnds){
+        
+        
+        
+    }
 
     public static void refreshGolfBookingSingleWindow(long target) {
         
@@ -502,12 +516,14 @@ public class JnaUtil {
 
     }
     public static void main(String[] args) throws InterruptedException {
-//        List<String> wnames = getAllWindowNames();
-//        for (String wname : wnames) {
-//            if (wname.contains("Google Chrome")) {
-//                System.out.println(wname);
-//            }
-//        }
+        List<String> wnames = getAllWindowNames();
+        for (String wname : wnames) {
+            if (wname.contains("Google Chrome")) {
+                System.out.println(wname);
+            }
+        }
+        List<Pointer> hwnsChrome =  getAllWinHwndContains("Google Chrome");
+        
         Date time = timeIs();
         long tt = System.currentTimeMillis();
         

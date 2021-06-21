@@ -15,6 +15,8 @@ import com.sun.jna.win32.StdCallLibrary;
  */
 public interface User32 extends StdCallLibrary {
    User32 INSTANCE = (User32) Native.loadLibrary("user32", User32.class);
+    
+    public void SendMessage(Pointer hwnd, int WM_QUIT, Object object, Object object0);
 
    interface WNDENUMPROC extends StdCallCallback {
       boolean callback(Pointer hWnd, Pointer arg);
@@ -54,4 +56,10 @@ public interface User32 extends StdCallLibrary {
    Pointer GetAncestor(Pointer hWnd, int gaFlags);
 
    boolean IsWindowVisible(Pointer hWnd);
+//   int SendMessage(HWND hWnd, int dwFlags, byte bVk, int dwExtraInfo);
+
+   void PostMessage(Pointer hWnd,
+                 int msg,
+                 int wParam,
+                 int lParam);
 }

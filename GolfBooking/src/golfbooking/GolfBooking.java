@@ -1,27 +1,35 @@
 /*
  * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
+ * To change this template file, choose Tools | Template
  * and open the template in the editor.
  */
 package golfbooking;
 
 import com.sun.jna.Pointer;
+import static golfbooking.JnaUtil.getWinHwndEndWith;
+import static golfbooking.JnaUtil.getWindowText;
+import static golfbooking.JnaUtil.setForegroundWindow;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledExecutorService; 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
@@ -37,14 +45,18 @@ public class GolfBooking extends javax.swing.JFrame {
     ScheduledExecutorService ses = null;
     ScheduledExecutorService sesGolf = null;
     public static long timeDiff = 0;
-
+    int col=1, row = 1;
     boolean bStarted = false;
     public static long count = 0;
     public static long timeTarget = 0;
-    List<Pointer> hwnsChrome = null;
+    List<Pointer> hwnsChrome = new ArrayList<>();
 
     /**
      * Creates new form GolfBooking
+     * https://kscgolf2.noq.com.hk/?noq_c=kscgolf&noq_r=https%3A%2F%2Fbooking.kscgolf.org.hk%2FwaitingRoom%3F
+     * https://kscgolf2.noq.com.hk/?noq_c=kscgolf&noq_r=https%3A%2F%2Fbooking.kscgolf.org.hk%2FwaitingRoom%3F
+     * https://kscgolf2.noq.com.hk/?noq_c=kscgolf&noq_r=https%3A%2F%2Fbooking.kscgolf.org.hk%2FwaitingRoom%3F
+     * https://booking.kscgolf.org.hk/newBooking
      */
     public GolfBooking() {
         initComponents();
@@ -77,6 +89,7 @@ public class GolfBooking extends javax.swing.JFrame {
                     sesGolf.shutdown();
                 }
                 sesGolf = null;
+                bFired = false;
                 count = 0;
             } catch (Exception e) {
                 System.out.println("ERROR - unexpected exception function");
@@ -84,7 +97,7 @@ public class GolfBooking extends javax.swing.JFrame {
 
         }
     };
-
+    boolean bFired = false;
     public void countDown() {
 
         try {  // Let no Exception reach the ScheduledExecutorService.
@@ -99,15 +112,19 @@ public class GolfBooking extends javax.swing.JFrame {
             long minutes = 0;
             minutes = (timeRemain - hour * 3600000) / 60000;
             double sec = (timeRemain - hour * 3600000 - minutes * 60000) * 1.0 / 1000.0;
-            if (hour == 0 && minutes == 0 && sec < 10) {
-                if (sesGolf == null) {
-                    sesGolf = Executors.newScheduledThreadPool(1);
-                    sesGolf.schedule(refreshSingleWindow, timeTarget - System.currentTimeMillis() - timeDiff, TimeUnit.MILLISECONDS);
+            if (hour == 0 && minutes == 0 && sec < 10 && !bFired) {
+                bFired = true;
+                if (jComboBoxAlgo.getSelectedIndex() == 3) {
+                     sesGolf = Executors.newScheduledThreadPool(row*col);
+                } else {
+                    if (sesGolf == null) {
+                        sesGolf = Executors.newScheduledThreadPool(1);
+                        sesGolf.schedule(refreshSingleWindow, timeTarget - System.currentTimeMillis() - timeDiff, TimeUnit.MILLISECONDS);
+                    }
                 }
+                
                 jLabelCountDown.setForeground(Color.red);
-            } else {
-                jLabelCountDown.setForeground(jLabel1.getForeground());
-            }
+            } 
             String strHour = (hour > 0) ? String.format("%dH:", hour) : "";
             String strMin = (minutes > 0) ? String.format("%dM:", minutes) : "";
             String result = String.format("%s -  %s %s %.3fS", passed, strHour, strMin, sec);
@@ -195,10 +212,16 @@ public class GolfBooking extends javax.swing.JFrame {
         jPanel11 = new javax.swing.JPanel();
         jButtonWeb = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
+        jButtonTab = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Booking");
         setMinimumSize(new java.awt.Dimension(450, 350));
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
+        });
         getContentPane().setLayout(new java.awt.GridLayout(1, 0));
 
         jPanelContent.setMinimumSize(new java.awt.Dimension(450, 350));
@@ -357,6 +380,14 @@ public class GolfBooking extends javax.swing.JFrame {
         });
         jPanel11.add(jButton1);
 
+        jButtonTab.setText("Tabs");
+        jButtonTab.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonTabActionPerformed(evt);
+            }
+        });
+        jPanel11.add(jButtonTab);
+
         jTabbedPane1.addTab("Test", jPanel11);
 
         getContentPane().add(jTabbedPane1);
@@ -370,6 +401,7 @@ public class GolfBooking extends javax.swing.JFrame {
 
     private void jButtonStartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStartActionPerformed
         // TODO add your handling code here:
+        bFired = false;
         jLabelCountDown.setForeground(jLabel1.getForeground());
         jLabelCountDown.setText("");
         int year, month, day, hour, minute, second;
@@ -404,7 +436,7 @@ public class GolfBooking extends javax.swing.JFrame {
 
             }
         };
-
+        
         ses = Executors.newScheduledThreadPool(1);
         ses.scheduleWithFixedDelay(runnable, 10, 100, TimeUnit.MILLISECONDS);
 
@@ -415,6 +447,7 @@ public class GolfBooking extends javax.swing.JFrame {
     private void jButtonStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStopActionPerformed
         // TODO add your handling code here:
         jLabelCountDown.setText("");
+        bFired = false;
         count = 0;
         if (ses != null) {
             ses.shutdown();
@@ -471,45 +504,110 @@ public class GolfBooking extends javax.swing.JFrame {
         jTextFieldsecond.setText("0");
     }//GEN-LAST:event_jButton5ActionPerformed
 
-    private void jButtonWebActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonWebActionPerformed
+     public static void robotColon(Robot robot) {
 
-        // TODO add your handling code here:
+            robot.keyPress(KeyEvent.VK_SHIFT);  
+            robot.keyPress(KeyEvent.VK_SEMICOLON);  
+            robot.delay(10);
+            robot.keyRelease(KeyEvent.VK_SEMICOLON);  
+            robot.keyRelease(KeyEvent.VK_SHIFT);
+            robot.delay(10);
+    }
+    void sendKeys(Robot robot, String keys) {
+        for (char c : keys.toCharArray()) {
+
+            int keyCode = KeyEvent.getExtendedKeyCodeForChar(c);
+//            System.out.println(c + " = " + keyCode);
+            if (c == ':') {
+                robotColon(robot);
+            } else {
+                if (KeyEvent.CHAR_UNDEFINED == keyCode) {
+                    if (c == ':') {
+                        keyCode = KeyEvent.VK_COLON;
+                    } else {
+                        throw new RuntimeException(
+                                "Key code not found for character '" + c + "'");
+                    }
+                }
+                robot.keyPress(keyCode);
+                robot.delay(10);
+                robot.keyRelease(keyCode);
+                robot.delay(10);
+                
+            }
+        }
+        robot.keyPress(KeyEvent.VK_ENTER);
+        robot.delay(120);
+        robot.keyRelease(KeyEvent.VK_ENTER);
+        robot.delay(120);
+    }
+    private void jButtonWebActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonWebActionPerformed
         try {
-            int row = 2, col = 4;
+            this.setVisible(false);
+            // TODO add your handling code here:
+          
             Robot robot = new Robot();
-            hwnsChrome = null;
+            hwnsChrome.clear();
+            Kill_App.killApp("chrome.exe");
             for (int i = 0; i < row * col; i++) {
 //                Runtime.getRuntime().exec("chrome");
                 Runtime.getRuntime().exec(new String[]{"cmd", "/c", "start chrome"});
-//                Pointer hwnd = JnaUtil.getForegroundWindow();
-                Thread.sleep(500);
+                robot.delay(200);
             }
             hwnsChrome = JnaUtil.getAllWinHwndContains("Google Chrome");
+            int trytime=0;
+            while(hwnsChrome==null || hwnsChrome.size()<row*col){
+                hwnsChrome = JnaUtil.getAllWinHwndContains("Google Chrome");
+                trytime++;
+                if(trytime > 5) {
+                    Kill_App.killApp("chrome.exe");
+                    return;
+                }
+            }
+            
             Dimension objDimension = Toolkit.getDefaultToolkit().getScreenSize();
             int bwidth = objDimension.width / col;
             int bheight = (objDimension.height - 35) / row;
             int counter = 0;
+            System.out.println("Window collected: " + hwnsChrome.size());
+            String waitingRoom = "https://booking.kscgolf.org.hk/waitingRoom";
+//            String waitingRoom ="https://booking.kscgolf.org.hk/");
             for (int i = 0; i < row; i++) {
                 for (int j = 0; j < col; j++) {
-                    if (counter >= hwnsChrome.size()) {
-                        break;
-                    }
-                    JnaUtil.setForegroundWindow(hwnsChrome.get(counter));
+//                    if (counter >= hwnsChrome.size()) {
+//                        break;
+//                    }
+                    Pointer hwnd = hwnsChrome.get(counter);
+                    JnaUtil.setForegroundWindow(hwnd);
                     Thread.sleep(300);
                     JnaUtil.setWindowPos(hwnsChrome.get(counter), bwidth * j, bheight * i, bwidth, bheight);
+                    Thread.sleep(100);
+                    Rectangle rect = JnaUtil.getWindowRect(hwnd);
+//                if (i == 0) {
+                    robot.mouseMove(rect.x + 190, rect.y + 60);
+                    robot.delay(300);
+                    robot.mousePress(InputEvent.BUTTON1_MASK);
+                    robot.delay(100);
+                    robot.mouseRelease(InputEvent.BUTTON1_MASK);
+                    robot.delay(100);
+                    sendKeys(robot, waitingRoom);
                     Thread.sleep(100);
                     counter++;
                 }
             }
+            this.setVisible(true);
+        } catch (AWTException ex) {
+            Logger.getLogger(GolfBooking.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(GolfBooking.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (AWTException ex) {
+        } catch (JnaUtilException ex) {
             Logger.getLogger(GolfBooking.class.getName()).log(Level.SEVERE, null, ex);
         } catch (InterruptedException ex) {
             Logger.getLogger(GolfBooking.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            Logger.getLogger(GolfBooking.class.getName()).log(Level.SEVERE, null, ex);
         }
-        Pointer hwnd = JnaUtil.getForegroundWindow();
-
+ this.setVisible(true);
     }//GEN-LAST:event_jButtonWebActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
@@ -529,6 +627,63 @@ public class GolfBooking extends javax.swing.JFrame {
         }
 
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        try {
+            // TODO add your handling code here:
+            Robot robot = new Robot();
+            if (hwnsChrome != null && hwnsChrome.size() > 0) {
+                for (Pointer hwnd : hwnsChrome) {
+
+                    JnaUtil.setForegroundWindow(hwnd);
+
+                    Rectangle rect = JnaUtil.getWindowRect(hwnd);
+//                if (i == 0) {
+                    robot.mouseMove(rect.x + rect.width -15, rect.y + 15);
+                    robot.delay(500);
+                    robot.mousePress(InputEvent.BUTTON1_MASK);
+                    robot.delay(100);
+                    robot.mouseRelease(InputEvent.BUTTON1_MASK);
+                    robot.delay(100);
+                }
+            }
+        } catch (AWTException ex) {
+            Logger.getLogger(GolfBooking.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (JnaUtilException ex) {
+            Logger.getLogger(GolfBooking.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_formWindowClosing
+
+    private void jButtonTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonTabActionPerformed
+        // TODO add your handling code here:
+   
+        try {
+            Robot robot = new Robot();
+//            robot.setAutoDelay(3);
+            Pointer hWnd = getWinHwndEndWith("Google Chrome");
+            boolean foo = setForegroundWindow(hWnd);
+            System.out.println(getWindowText(hWnd));
+            long start = System.currentTimeMillis();
+            for (int i = 0; i < 80; i++) {
+                robot.delay(10);
+                robot.keyPress(KeyEvent.VK_ALT);
+                robot.delay(10);
+                robot.keyPress(KeyEvent.VK_D);
+                robot.delay(10);
+                robot.keyRelease(KeyEvent.VK_D);
+                robot.delay(10);
+                robot.keyPress(KeyEvent.VK_ENTER);
+                robot.delay(10);
+                robot.keyRelease(KeyEvent.VK_ENTER);
+                robot.delay(10);
+                robot.keyRelease(KeyEvent.VK_ALT);
+                robot.delay(10);
+            }
+            System.out.println("Time ellapse: " + (System.currentTimeMillis() - start) / 1000.0);
+        } catch (AWTException ex) {
+            Logger.getLogger(JnaUtil.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_jButtonTabActionPerformed
 
     /**
      * @param args the command line arguments
@@ -551,6 +706,7 @@ public class GolfBooking extends javax.swing.JFrame {
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButtonStart;
     private javax.swing.JButton jButtonStop;
+    private javax.swing.JButton jButtonTab;
     private javax.swing.JButton jButtonWeb;
     private javax.swing.JComboBox<String> jComboBoxAlgo;
     private javax.swing.JLabel jLabel1;
