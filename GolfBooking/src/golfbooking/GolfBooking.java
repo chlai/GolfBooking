@@ -6,9 +6,11 @@
 package golfbooking;
 
 import com.sun.jna.Pointer;
+import static golfbooking.JnaUtil.getAllWinHwndContains;
 import static golfbooking.JnaUtil.getWinHwndEndWith;
 import static golfbooking.JnaUtil.getWindowText;
 import static golfbooking.JnaUtil.setForegroundWindow;
+import static golfbooking.JnaUtil.setWindowVisible;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -213,6 +215,8 @@ public class GolfBooking extends javax.swing.JFrame {
         jButtonWeb = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
         jButtonTab = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
+        jTextFieldWindName = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Booking");
@@ -364,6 +368,8 @@ public class GolfBooking extends javax.swing.JFrame {
 
         jTabbedPane1.addTab("Main", jPanelContent);
 
+        jPanel11.setLayout(null);
+
         jButtonWeb.setText("Web");
         jButtonWeb.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -371,6 +377,7 @@ public class GolfBooking extends javax.swing.JFrame {
             }
         });
         jPanel11.add(jButtonWeb);
+        jButtonWeb.setBounds(40, 20, 70, 50);
 
         jButton1.setText("Test");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
@@ -379,6 +386,7 @@ public class GolfBooking extends javax.swing.JFrame {
             }
         });
         jPanel11.add(jButton1);
+        jButton1.setBounds(110, 20, 59, 50);
 
         jButtonTab.setText("Tabs");
         jButtonTab.addActionListener(new java.awt.event.ActionListener() {
@@ -387,6 +395,20 @@ public class GolfBooking extends javax.swing.JFrame {
             }
         });
         jPanel11.add(jButtonTab);
+        jButtonTab.setBounds(170, 20, 80, 50);
+
+        jButton2.setText("Set On Top");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+        jPanel11.add(jButton2);
+        jButton2.setBounds(260, 20, 70, 50);
+
+        jTextFieldWindName.setText("SOLIDWORKS");
+        jPanel11.add(jTextFieldWindName);
+        jTextFieldWindName.setBounds(40, 90, 260, 22);
 
         jTabbedPane1.addTab("Test", jPanel11);
 
@@ -685,6 +707,23 @@ public class GolfBooking extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButtonTabActionPerformed
 
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        // TODO add your handling code here:
+        try {
+            Robot robot = new Robot();
+//            robot.setAutoDelay(3);
+            List<Pointer> hWndNameContain = getAllWinHwndContains(this.jTextFieldWindName.getText());
+            hWndNameContain.forEach(s->{
+                System.out.println(getWindowText(s));
+                setWindowVisible(s);
+                setForegroundWindow(s);
+                    });
+           
+        } catch (AWTException ex) {
+            Logger.getLogger(JnaUtil.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_jButton2ActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -701,6 +740,7 @@ public class GolfBooking extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
@@ -730,6 +770,7 @@ public class GolfBooking extends javax.swing.JFrame {
     private javax.swing.JPanel jPanelContent;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTextField jTextFieldLag;
+    private javax.swing.JTextField jTextFieldWindName;
     private javax.swing.JTextField jTextFieldday;
     private javax.swing.JTextField jTextFieldhour;
     private javax.swing.JTextField jTextFieldminute;

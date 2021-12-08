@@ -54,6 +54,8 @@ public interface User32 extends StdCallLibrary {
    Pointer GetParent(Pointer hWnd);
 
    Pointer GetAncestor(Pointer hWnd, int gaFlags);
+   
+   boolean setWindowVisible(Pointer hWnd, int meg);
 
    boolean IsWindowVisible(Pointer hWnd);
 //   int SendMessage(HWND hWnd, int dwFlags, byte bVk, int dwExtraInfo);

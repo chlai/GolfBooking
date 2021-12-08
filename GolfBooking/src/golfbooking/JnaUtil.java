@@ -255,6 +255,9 @@ public class JnaUtil {
     public static Pointer getWindow(Pointer hWnd, int uCmd) {
         return user32.GetWindow(hWnd, uCmd);
     }
+//    public static boolean setWindowVisible(Pointer hWnd){
+//        return user32.setWindowVisible(hWnd, 5);
+//    }
 
     public static String getWindowText(Pointer hWnd) {
         int nMaxCount = 512;
@@ -290,6 +293,12 @@ public class JnaUtil {
 
     public static boolean isWindowVisible(Pointer hWnd) {
         return user32.IsWindowVisible(hWnd);
+    }
+    
+    public static boolean setWindowVisible(Pointer hWnd){
+        user32.SetWindowPos(hWnd, hWnd, 0, 0, 0, 0, 0)  ;
+        return user32.setWindowVisible(hWnd,5);
+        
     }
 
     public static Pointer getParent(Pointer hWnd) {
